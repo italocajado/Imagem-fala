@@ -5,7 +5,7 @@ import os
 import cv2
 import tkinter as tk
 from tkinter import ttk
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\italo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\pytesseract'
+pytesseract.pytesseract.tesseract_cmd = r"C:\Users\italo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\pytesseract.exe"
 
 class CameraApp:
     def __init__(self, master):
