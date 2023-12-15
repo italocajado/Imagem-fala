@@ -1,48 +1,93 @@
-from PIL import Image
-import pytesseract
-from gtts import gTTS
-import os
 import cv2
-import tkinter as tk
-from tkinter import ttk
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\italo\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\pytesseract.exe"
+from tkinter import *
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageTk
+import pytesseract
+import threading
 
-class CameraApp:
+pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract.exe'
+
+class ImagemFala:
     def __init__(self, master):
         self.master = master
-        self.master.title('captura e descrição')
+        self.master.title("Imagem-Fala")
+        self.cam = cv2.VideoCapture(0)
 
-        self.btn_capture = ttk.Button(self.master, text="Tirar foto", command=self.tirar_foto)
-        self.btn_capture.pack(pady=10)
+        # Label for displaying the camera feed
+        self.lmain = Label(master)
+        self.lmain.pack()
 
-        self.btn_process = ttk.Button(self.master, text="Processar e descrever", command=self.processar_desc)
-        self.btn_process.pack(pady=10)
+        # Label for displaying the text description of the image
+        self.label_texto = Label(master, text="Descrição da imagem:", font=("Helvetica", 12))
+        self.label_texto.pack()
 
-    def tirar_foto(self):
-        cam = cv2.VideoCapture(0)
-        ret, frame = cam.read()
-        name = 'foto.jpg'
-        cv2.imwrite(name, frame)
+        # Button for capturing an image
+        self.button_capturar = Button(master, text="Capturar Imagem", command=self.capture)
+        self.button_capturar.pack()
 
-    def processar_desc(self):
-        caminho_img = 'foto.jpg'
-        descricao = self.processar_img(caminho_img)
-        self.desc_fala(descricao)         
+        # Button for extracting text from an image
+        self.button_descricao = Button(master, text="Extrair Texto", command=self.desc_imagem)
+        self.button_descricao.pack()
 
-    def processar_img(self, caminho_img):
-        imagem = Image.open(caminho_img)
-        text_desc = pytesseract.image_to_string(imagem)
-        return text_desc
+        # Call the ventana function
+        self.ventana()
 
-    def desc_fala(self, descricao):
-        tts = gTTS(text=descricao, lang='pt')
-        tts.save('descricao.mp3')
-        os.system('start descricao.mp3')
+    def ventana(self):
+        # Get the current frame
+        ret, frame = self.cam.read()
+        if ret:
+            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            self.img_tk = Image.fromarray(cv2image)
+            self.img_tk = ImageTk.PhotoImage(self.img_tk)
+            self.lmain.configure(image=self.img_tk)
+            self.lmain.image = self.img_tk
 
-def main():
-    root = tk.Tk()
-    app = CameraApp(root)
+            # Call the function to extract the text in a separate thread
+            threading.Thread(target=self.desc_imagem, args=(cv2image,)).start()
+
+        # Schedule the function to be called again after 1 millisecond
+        self.master.after(1, self.ventana)
+        threading.Thread(target=self.desc_imagem).start()
+
+    def capture(self):
+        # Get the current frame
+        ret, frame = self.cam.read()
+
+        if ret:
+            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            self.img_tk = Image.fromarray(cv2image)
+            self.img_tk = ImageTk.PhotoImage(self.img_tk)
+            self.lmain.configure(image=self.img_tk)
+            self.lmain.image = self.img_tk
+
+            descricao = self.desc_imagem(cv2image)
+            self.label_texto.config(text=descricao)
+
+            # Save the image
+            img = Image.fromarray(cv2image)
+            img.save("capture.png")
+            messagebox.showinfo("Informação", "Imagem capturada com sucesso!")
+
+        else:
+            messagebox.showerror("Erro", "Erro ao capturar a imagem.")
+
+    def desc_imagem(self, event=None):
+        if self.img_tk is not None:
+            img = Image.fromarray(self.img_tk)
+            text_desc = pytesseract.image_to_string(img, lang='por')
+            return text_desc
+        else:
+            return 'Sem descrição'
+        
+    def close_app(self):
+        self.close_camera()
+        self.master.destroy()
+
+    def close_camera(self):
+        self.cam.release()
+        cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    root = Tk()
+    my_gui = ImagemFala(root)
     root.mainloop()
-
-if __name__ == "__main__":
-    main()
