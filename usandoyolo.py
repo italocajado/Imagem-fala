@@ -1,40 +1,55 @@
 import cv2
 import numpy as np
-import tensorflow
-import keras
-import yolo
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array
+import gtts
 
-def desc_imagem(self, imagem=None):
-    if imagem is not None:
-        # Carregar o modelo YOLOv3 pré-treinado
-        net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
-        layer_names = net.getLayerNames()
-        output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+def detect_and_convert(image):
+    model = load_model('yolov3.h5') # Load the trained YOLO model
+    labels = open('labels.txt').read().strip().split('\n') # Read labels from the text file
 
-        # Converter a imagem para blob e detectar objetos
-        blob = cv2.dnn.blobFromImage(imagem, 1/255, (416, 416), swapRB=True, crop=False)
-        net.setInput(blob)
-        outs = net.forward(output_layers)
+    # Preprocess the image and run it through the model
+    image = cv2.resize(image, (416, 416))
+    image = image / 255.0
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
 
-        # Desenhar caixas delimitadoras e rotular objetos detectados
-        for out in outs:
-            for detection in out:
-                scores = detection[5:]
-                class_id = np.argmax(scores)
-                confidence = scores[class_id]
-                if confidence > 0.5:
-                    # Ajustar as coordenadas das caixas delimitadoras à altura e largura da imagem
-                    box = detection[0:4] * np.array([imagem.shape[1], imagem.shape[0], imagem.shape[1], imagem.shape[0]])
-                    (centerX, centerY, width, height) = box.astype("int")
+    detections = model.predict(image)
+    boxes = []
+    scores = []
+    classIDs = []
 
-                    # Desenhar a caixa delimitadora e o rótulo
-                    label = str(class_id)
-                    cv2.rectangle(imagem, (centerX - width // 2, centerY - height // 2), (centerX + width // 2, centerY + height // 2), (0, 0, 255), 2)
-                    cv2.putText(imagem, label, (centerX - width // 2, centerY - height // 2 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    for i in range(0, detections.shape[2]):
+        box = detections[0, 0, i, 0:4]
+        score = detections[0, 0, i, 4]
 
-        # Exibir a imagem com objetos detectados
-        cv2.imshow("Imagem", imagem)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    else:
-        return ""
+        if score > 0.5:
+            boxes.append(box)
+            scores.append(score)
+            classIDs.append(i)
+
+    indices = cv2.dnn.NMSBoxes(boxes, scores, 0.5, 0.4)
+
+    # Process each detected object
+    for i in indices.flatten():
+        box = boxes[i]
+        x = int(box[0] * image.shape[1])
+        y = int(box[1] * image.shape[0])
+        w = int(box[2] * image.shape[1])
+        h = int(box[3] * image.shape[0])
+
+        label = labels[classIDs[i]]
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # Convert the detected object to audio
+        audio = text_to_speech(label)
+
+        # Save the audio to a file
+        with open('output.wav', 'wb') as f:
+            f.write(audio)
+
+def text_to_speech(text):
+    # Use a text-to-speech library to convert the text to audio
+    tts = gtts.gTTS(text=text, lang='por')
+    return tts.save("output.wav")
