@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
   <head>
     <title>Detecção de objetos utilizando o tensorFlow JS</title>
     <meta charset="utf-8">
@@ -13,17 +13,17 @@
     
     <section id="demos" class="invisible">
 
-      <p>Hold some objects up close to your webcam to get a real-time classification! When ready click "enable webcam" below and accept access to the webcam when the browser asks (check the top left of your window)</p>
+      <p>Segure qualquer objeto a frente da camera! Quando estiver pronto, clique em "Ativar camera" Verifique se o navegador solicita a permissão para uso da mesma</p>
       
       <div id="liveView" class="camView">
-        <button id="webcamButton">Enable Webcam</button>
-        <video id="webcam" autoplay muted width="640" height="480"></video>
+        <button id="webcamButton">Ativar camera</button>
+        <video id="webcam" autoplay muted width="1000" height="600"></video>
       </div>
     </section>
     
 
     <!-- Import TensorFlow.js library -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs" type="text/javascript"></script>
     <!-- Load the coco-ssd model to use to recognize things in images -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
     
