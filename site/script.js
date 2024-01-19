@@ -108,3 +108,71 @@ function predictWebcam() {
     window.requestAnimationFrame(predictWebcam);
   });
 }
+
+const descricaoButton = document.getElementById('descricao');
+
+// Add a click event listener to the "Descrever imagem" button
+descricaoButton.addEventListener('click', () => {
+  // Only continue if the COCO-SSD has finished loading.
+  if (!model) {
+    return;
+  }
+
+  // Get the current frame from the webcam
+  model.detect(video).then(predictions => {
+    // Remove any highlighting we did previous frame.
+    for (let i = 0; i < children.length; i++) {
+      liveView.removeChild(children[i]);
+    }
+    children.splice(0);
+
+    // Now lets loop through predictions and draw them to the live view if
+    // they have a high confidence score.
+    for (let n = 0; n < predictions.length; n++) {
+      // If we are over 66% sure we are sure we classified it right, draw it!
+      if (predictions[n].score > 0.40) {
+        const p = document.createElement('p');
+        p.innerText = predictions[n].class  + ' - com ' 
+            + Math.round(parseFloat(predictions[n].score) * 100) 
+            + '% Confiança.';
+        p.style = 'margin-left: ' + predictions[n].bbox[0] + 'px; margin-top: '
+            + (predictions[n].bbox[1] - 10) + 'px; width: ' 
+            + (predictions[n].bbox[2] - 10) + 'px; top: 0; left: 0;';
+
+        const highlighter = document.createElement('div');
+        highlighter.setAttribute('class', 'highlighter');
+        highlighter.style = 'left: ' + predictions[n].bbox[0] + 'px; top: '
+            + predictions[n].bbox[1] + 'px; width: ' 
+            + predictions[n].bbox[2] + 'px; height: '
+            + predictions[n].bbox[3] + 'px;';
+
+        liveView.appendChild(highlighter);
+        liveView.appendChild(p);
+        children.push(highlighter);
+        children.push(p);
+      }
+    }
+  });
+});
+
+function generateReport(predictions) {
+  let report = 'Relatório de objetos: \n\n';
+ 
+  for (let n = 0; n < predictions.length; n++) {
+     report += predictions[n].class + ' - com ' 
+         + Math.round(parseFloat(predictions[n].score) * 100) 
+         + '% Confiança. \n';
+  }
+ 
+  return report;
+ }
+  
+ descricaoButton.addEventListener('click', () => {
+ 
+  model.detect(video).then(predictions => {
+ 
+     console.log(generateReport(predictions));
+ 
+     document.getElementById('report').innerText = generateReport(predictions);
+  });
+ });
