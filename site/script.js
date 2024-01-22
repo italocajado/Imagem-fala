@@ -2,6 +2,7 @@ const video = document.getElementById('webcam');
 const liveView = document.getElementById('liveView');
 const demosSection = document.getElementById('demos');
 const enableWebcamButton = document.getElementById('webcamButton');
+const reportSection = document.getElementById('report');
 
 // Check if webcam access is supported.
 function getUserMediaSupported() {
@@ -157,22 +158,29 @@ descricaoButton.addEventListener('click', () => {
 
 function generateReport(predictions) {
   let report = 'Relatório de objetos: \n\n';
- 
+
   for (let n = 0; n < predictions.length; n++) {
-     report += predictions[n].class + ' - com ' 
-         + Math.round(parseFloat(predictions[n].score) * 100) 
-         + '% Confiança. \n';
+    report += predictions[n].class + ' - com ' 
+        + Math.round(parseFloat(predictions[n].score) * 100) 
+        + '% Confiança. \n';
   }
- 
-  return report;
- }
-  
- descricaoButton.addEventListener('click', () => {
- 
+
+  // Create a new SpeechSynthesisUtterance object with the report text.
+  const speech = new SpeechSynthesisUtterance(report);
+
+  // Set the language and pitch of the speech.
+  speech.lang = 'pt-BR';
+  speech.pitch = 1.5;
+
+  // Speak the report using the SpeechSynthesis interface.
+  window.speechSynthesis.speak(speech);
+
+  // Set the report text to the report section.
+  reportSection.innerText = report;
+}
+
+descricaoButton.addEventListener('click', () => {
   model.detect(video).then(predictions => {
- 
-     console.log(generateReport(predictions));
- 
-     document.getElementById('report').innerText = generateReport(predictions);
+    generateReport(predictions);
   });
- });
+});
