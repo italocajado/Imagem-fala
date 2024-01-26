@@ -29,7 +29,7 @@ function enableCam(event) {
   event.target.classList.add('removed');  
   
   const constraints = {
-    video: true
+    video: { facingMode: "environment" }
   };
 
   //mantendo a camera aberta
